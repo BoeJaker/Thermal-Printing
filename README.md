@@ -11,6 +11,6 @@ Give your user write permissions:\
 ```sudo chmod +w /dev/usb/<device_name>```\
 \
 Test its working with:\
-```echo "Hello World" > /dev/usb/<device_name>\
+```echo "Hello World" > /dev/usb/<device_name>```\
 
 
