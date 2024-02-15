@@ -1,8 +1,11 @@
-from flask import Flask, request
-import subprocess
-app = Flask(__name__)
+import socket
+import threading
 
-port=12345
+import subprocess
+
+# Define host and port for the server
+host = "0.0.0.0"
+port = 9999
 usb_interface="lp0"
 
 def wrap_text(text, line_length):
@@ -31,15 +34,47 @@ def print_to_usb_thermal_printer(text):
     except subprocess.CalledProcessError as e:
         print("Error printing to USB thermal printer:", e)
 
-@app.route('/print/<string:text>', methods=['GET'])
-def print_text(text):
-    print_to_usb_thermal_printer(text)
-    return "Print command received and processed."
+def handle_client(client_socket):
+    while True:
+        # Receive data from the client
+        data = client_socket.recv(1024)
+        if not data:
+            break
 
-@app.route('/size/<int:size>', methods=['GET'])
-def set_size(size):
-    set_character_size(size)
-    return "Character size set."
+        # Decode the received data (assuming UTF-8 encoding)
+        message = data.decode("utf-8")
+        print("Received:", message)
+        print_to_usb_thermal_printer(message)
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=port)
+        # Echo back the received message to the client
+        # client_socket.sendall(data)
+
+    # Close the client socket when the connection is terminated
+    client_socket.close()
+
+def main():
+    # Create a socket object
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+    # Bind the socket to the host and port
+    server_socket.bind((host, port))
+
+    # Start listening for incoming connections
+    server_socket.listen(5)
+    print("Server listening on {}:{}".format(host, port))
+
+    try:
+        while True:
+            # Accept incoming connections
+            client_socket, client_address = server_socket.accept()
+            print("Accepted connection from {}:{}".format(client_address[0], client_address[1]))
+
+            # Handle each client connection in a separate thread
+            client_thread = threading.Thread(target=handle_client, args=(client_socket,))
+            client_thread.start()
+    except KeyboardInterrupt:
+        print("Server shutting down.")
+        server_socket.close()
+
+if __name__ == "__main__":
+    main()
