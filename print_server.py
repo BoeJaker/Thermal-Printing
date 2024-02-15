@@ -2,6 +2,13 @@ import socket
 import threading
 
 import subprocess
+import argparse
+
+parser = argparse.ArgumentParser(description="A simple command-line tool")
+# Add arguments
+parser.add_argument("-t", "--text", type=str, help="Your Message")
+# Parse the command-line arguments
+args = parser.parse_args()
 
 # Define host and port for the server
 host = "0.0.0.0"
@@ -77,4 +84,7 @@ def main():
         server_socket.close()
 
 if __name__ == "__main__":
-    main()
+    if args.text:
+        print_to_usb_thermal_printer(args.text)
+    else:
+        main()
